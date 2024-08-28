@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-dev \
     zlib1g-dev \
     python3-dev \
-    libffi-dev 
+    libffi-dev \
     r-base \
     r-base-dev 
     
