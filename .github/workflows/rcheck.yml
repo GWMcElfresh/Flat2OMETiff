@@ -2,7 +2,6 @@
 on:
   workflow_dispatch:
   push:
-    branches: [ main]
   pull_request:
   schedule:
     - cron: "0 6 * * 3"
@@ -40,8 +39,8 @@ jobs:
       - name: Install pdflatex
         run: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
 
-      - name: Install packages
-        if: runner.os != 'Windows'
+     #@ - name: Install packages
+      #  if: runner.os != 'Windows'
         #probably don't need any of these, but likely to need a python install at some point.
         #run: |
           # NOTE: libsodium-dev installed for VISION

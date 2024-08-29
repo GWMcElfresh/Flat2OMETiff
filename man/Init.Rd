@@ -6,6 +6,9 @@
 \usage{
 Init(echo = T)
 }
+\arguments{
+\item{echo}{boolean to control responses printed (or is it???)}
+}
 \description{
 Temporary function to set up R package
 }
