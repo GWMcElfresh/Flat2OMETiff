@@ -12,7 +12,10 @@ RoxygenNote: 7.3.2
 LazyData: true
 Depends:
     R (>= 4.3.0)
-Remotes: 
+Imports:
+    tidyverse, 
+    parallel,
+    Matrix, 
     RBioformats
 Suggests:
     devtools,
