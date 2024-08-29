@@ -16,7 +16,7 @@ Imports:
     tidyverse, 
     parallel,
     Matrix, 
-    RBioformats
+    RBioFormats
 Suggests:
     devtools,
     rmarkdown,
