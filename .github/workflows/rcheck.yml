@@ -39,16 +39,15 @@ jobs:
       - name: Install pdflatex
         run: sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
 
-     #@ - name: Install packages
-      #  if: runner.os != 'Windows'
+      - name: Install Python Packages
+        if: runner.os != 'Windows'
         #probably don't need any of these, but likely to need a python install at some point.
-        #run: |
-          # NOTE: libsodium-dev installed for VISION
-          #sudo apt-get update && sudo apt-get install -yq python3 python3-pip libsodium-dev libcurl4-openssl-dev
-          #python3 -m pip install --upgrade pip
-          #python3 -m pip install --user wheel setuptools
-          #python3 -m pip install --user git+https://github.com/kmayerb/tcrdist3.git@0.2.2
-          #python3 -m pip install --user umap-learn phate sctour scikit-misc leidenalg
+        run: |
+          sudo apt-get update && sudo apt-get install -yq python3 python3-pip libcurl4-openssl-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --user wheel setuptools
+          # NOTE: aicsimageio is necessary for metadata writing on the OME tiff file.
+          python3 -m pip install --user aicsimageio
 
       # Note: the environment variable R_BIOC_VERSION is set to force remotes::install_bioc to follow the proper version
       - name: Setup Bioconductor
