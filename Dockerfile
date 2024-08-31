@@ -17,8 +17,16 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     libffi-dev \
     r-base \
-    r-base-dev 
-    
+    r-base-dev \
+    rustc 
+
+#julia install 
+RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linux-x86_64.tar.gz && \
+    tar zxvf julia-1.10.5-linux-x86_64.tar.gz && \
+    julia -e 'import Pkg; Pkg.add(["Glob", "CSV", "DataFrames", "CodecZlib", "ArgParse"])'
+
+#cargo install proseg
+RUN cargo install proseg
 
 ENV NUMBA_CACHE_DIR=/work/numba_cache
 ENV MPLCONFIGDIR=/work/mpl_cache
