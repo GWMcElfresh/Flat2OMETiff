@@ -21,8 +21,9 @@ RUN apt-get update && apt-get install -y \
     rustc 
 
 #julia install 
-RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linux-x86_64.tar.gz && \
+RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linux-x86_64.tar.gz --directory-prefix=/ && \
     tar zxvf julia-1.10.5-linux-x86_64.tar.gz /julia && \
+    ls && \
     export PATH="$PATH:/julia/bin" && \
     julia -e 'import Pkg; Pkg.add(["Glob", "CSV", "DataFrames", "CodecZlib", "ArgParse"])'
 
