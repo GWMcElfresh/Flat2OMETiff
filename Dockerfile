@@ -22,7 +22,8 @@ RUN apt-get update && apt-get install -y \
 
 #julia install 
 RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linux-x86_64.tar.gz && \
-    tar zxvf julia-1.10.5-linux-x86_64.tar.gz && \
+    tar zxvf julia-1.10.5-linux-x86_64.tar.gz /julia && \
+    export PATH="$PATH:/julia/bin" && \
     julia -e 'import Pkg; Pkg.add(["Glob", "CSV", "DataFrames", "CodecZlib", "ArgParse"])'
 
 #cargo install proseg
