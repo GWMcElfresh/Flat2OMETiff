@@ -6,10 +6,11 @@
 #' @export
 
 Flat2Matrix <- function(expressionCsvPath = NULL,
-                         polygonCsvPath = NULL,
-                         basePath = "./",
+                        polygonCsvPath = NULL,
+                        basePath = "./",
                         channelNamesAreExpressionCSVColumnNames = TRUE) {
-  flat_file_list <- ReadFlatFiles(expressionCsvPath = expressionCsvPath,
+  #read in the flat files
+  flat_file_list <- .ReadFlatFiles(expressionCsvPath = expressionCsvPath,
                                   polygonCsvPath = polygonCsvPath)
   flat_file_list$polygons <- flat_file_list$polygons %>%
     mutate(x_global_px = round(x_global_px),
@@ -40,7 +41,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
 
   for (channel in channel_names) {
     #write blank image with correct global dimensions
-    sparseMatrix <- InitalizeSparseMatrix(x_min, x_max, y_min, y_max)
+    sparseMatrix <- .InitalizeSparseMatrix(x_min, x_max, y_min, y_max)
 
     #this sets up a vector of cells within FOVs that can be strsplit via:
     #FOV ID = strsplit(unique_cell_ids, split ="_")[2]
@@ -59,62 +60,57 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
                         y_global_px = y_global_px + offset_y) %>%
           as.matrix()
 
-
+      #create hull
       hull <- geometry::convhulln(cbind(vertices[,1], vertices[,2]), options = "FA")
 
+      #get a bounding box for the cell
       cell_x_min <- min(vertices[,1])
       cell_x_max <- max(vertices[,1])
       cell_y_min <- min(vertices[,2])
       cell_y_max <- max(vertices[,2])
 
-
+      #create a grid of points within the cell's bounding box
       cell_sub_image <- expand.grid(x = seq(cell_x_min, cell_x_max, 1), y = seq(cell_y_min, cell_y_max, 1))
 
       #look up the intensity of the channel in the cell's expression matrix
+      #TODO / NOTE: This will eventually probably scale to the transcriptomics flat files,
+      #in which this function won't have a single value per cell, but that data will be very dense,
+      #so I'll need to know that all of this works and is use before taking that on.
       cell_expression <- flat_file_list$expression %>%
         dplyr::filter(fov == fov_ID & cell_ID == cell_index) %>%
         dplyr::select(dplyr::all_of(channel)) %>%
         as.numeric()
-
+      #define the pixels inside of and on the hull
       inside <- sp::point.in.polygon(cell_sub_image[,1], cell_sub_image[,2], hull$p[,1], hull$p[,2])
       #write the expression of the current protein/gene as the intensity of the interior of the cell
+      #TODO: this will need to be adjusted if we move from average intensities to per-pixel/event data.
       inside[inside == 1] <- cell_expression
 
-      #if it's a border pixel, set the maximum intensity so that the border is visible across channels
+      #if it's a border/vertex pixel, set the maximum intensity so that the border is visible across every channel
       inside <- ifelse( inside == 2 | inside == 3, yes = 255, no = inside)
 
-
       #use the original coordinates directly in the sparse matrix
-      i_indices <- cell_sub_image$y
-      j_indices <- cell_sub_image$x
+      i_indices <- cell_sub_image$x
+      j_indices <- cell_sub_image$y
 
-      #correct dimensions calculation for the dims argument in the
-      #nrows <- max(i_indices) - min(i_indices) + 1
-      #ncols <- max(j_indices) - min(j_indices) + 1
-
-      #adjust indices to start from 1 within the submatrix
+      #adjust indices to start from 1 within the bounding box
       i_adjusted <- i_indices - min(i_indices) + 1
       j_adjusted <- j_indices - min(j_indices) + 1
 
       #filter out the zero values to keep the matrix sparse
       non_zero_indices <- which(inside != 0)
 
-      #define the sparse matrix just for the sub-region defined by the cell
+      #define the sparse matrix just for the bounding box of the cell
       sub_region_nrows <- max(i_indices) - min(i_indices) + 1
       sub_region_ncols <- max(j_indices) - min(j_indices) + 1
       i_adjusted <- i_indices[non_zero_indices] - min(i_indices) + 1
       j_adjusted <- j_indices[non_zero_indices] - min(j_indices) + 1
 
       #calculate global indices for updating the larger matrix
-      global_j_indices <- j_adjusted + (min(j_indices))
-      global_i_indices <- i_adjusted + (min(i_indices))
+      global_j_indices <- j_adjusted + min(j_indices)
+      global_i_indices <- i_adjusted + min(i_indices)
 
-      #debugging print statements
-      print("Global indices:")
-      print(global_j_indices)
-      print(global_i_indices)
-
-      #check for and handle NA values
+      #check for and handle zero values
       #the zeroes in the sparse matrix will yield NA, since they're still sparse, so . != 0 yields NA
       valid_indices <- !is.na(global_i_indices) & !is.na(global_j_indices)
 
@@ -145,40 +141,22 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
     }
     #write the channel's sparse matrix to disk
     Matrix::writeMM(sparseMatrix, file = paste0(basePath, "/sparse_matrix_", channel_name, ".mtx"))
-
   }
-
-
-
-
 }
 
-InitalizeSparseMatrix <- function(x_min, x_max, y_min, y_max) {
-
+.InitalizeSparseMatrix <- function(x_min, x_max, y_min, y_max) {
   sparse_matrix <- Matrix::Matrix(0,
                  nrow = length(seq(x_min, x_max, 1)),
                  ncol = length(seq(y_min, y_max, 1)),
                  sparse = TRUE)
-
   return(sparse_matrix)
-  #Matrix::writeMM(sparse_image, file = initialImagePath)
-
-  #writeTIFF(as.matrix(sparse_image), "output_image.tiff")
-  #magick::image_write(as.matrix(sparse_image), path = "./output_image.tiff", compression = "Lossless", format = "tiff")
 }
 
 
-ReadFlatFiles <- function(expressionCsvPath = NULL,
+.ReadFlatFiles <- function(expressionCsvPath = NULL,
                           polygonCsvPath = NULL) {
   expression <- data.table::fread(expressionCsvPath)
   polygons <- data.table::fread(polygonCsvPath)
   return(list(expression = expression, polygons = polygons))
 }
 
-# Create a large dataset (example)
-image <- array(runif(10000 * 10000), dim = c(10000, 10000))
-
-# Write the image to an HDF5 file
-h5createFile("large_image.h5")
-h5createDataset("large_image.h5", "image", dims = c(10000, 10000), storage.mode = "double", chunk = c(1000, 1000))
-h5write(image, "large_image.h5", "image")

@@ -10,10 +10,9 @@ def StreamImage(sparseMatrixFile):
   #Create an image object
   image = Image.new('L', (image_height, image_width))
 
-  #process in chunks
-  chunk_height = 1000  # Size of each chunk
+  #process in chunks (chunk dimensions = the length of the image x 1000)
+  chunk_height = 1000 
   chunk_width = image_width
-  
   
   #loop through the image in chunks
   for y in range(0, image_height, chunk_height):
