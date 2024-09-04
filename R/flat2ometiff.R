@@ -39,7 +39,8 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
   #harvest protein names from the expression matrix, but drop the cellular/FOV identifiers
   channel_names <- unique(colnames(flat_file_list$expression))[!(unique(colnames(flat_file_list$expression)) %in% c("fov", "cell_ID"))]
 
-  for (channel in channel_names) {
+  #TODO: remove the 1:3 when the function is ready for production
+  for (channel in channel_names[1:3]) {
     #write blank image with correct global dimensions
     sparseMatrix <- .InitalizeSparseMatrix(x_min, x_max, y_min, y_max)
 
@@ -49,6 +50,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
     unique_cells <- paste0("fov_", flat_file_list$expression$fov, "_cellID_", flat_file_list$expression$cell_ID)
 
     #iterate over cells and fill the convex hulls (defined by the polygon flat files) with expression data
+    #TODO: remove the [1:3] when the function is ready for production
     for (cell in unique_cells[1:3]){
       fov_ID <-  unlist(strsplit(cell, split ="_"))[2]
       cell_index <- unlist(strsplit(cell, split ="_"))[4]
@@ -89,26 +91,16 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
       #if it's a border/vertex pixel, set the maximum intensity so that the border is visible across every channel
       inside <- ifelse( inside == 2 | inside == 3, yes = 255, no = inside)
 
-      #use the original coordinates directly in the sparse matrix
+      #define the sub-image in units of pixels in the larger image
       i_indices <- cell_sub_image$x
       j_indices <- cell_sub_image$y
 
-      #adjust indices to start from 1 within the bounding box
-      i_adjusted <- i_indices - min(i_indices) + 1
-      j_adjusted <- j_indices - min(j_indices) + 1
-
-      #filter out the zero values to keep the matrix sparse
+      #filter out the zero values to keep the matrix sparse, but in coordinates of the sub-image
       non_zero_indices <- which(inside != 0)
 
-      #define the sparse matrix just for the bounding box of the cell
-      sub_region_nrows <- max(i_indices) - min(i_indices) + 1
-      sub_region_ncols <- max(j_indices) - min(j_indices) + 1
-      i_adjusted <- i_indices[non_zero_indices] - min(i_indices) + 1
-      j_adjusted <- j_indices[non_zero_indices] - min(j_indices) + 1
-
-      #calculate global indices for updating the larger matrix
-      global_j_indices <- j_adjusted + min(j_indices)
-      global_i_indices <- i_adjusted + min(i_indices)
+      #filter out indices in the dense sub-image that are zero.
+      global_i_indices <- i_indices[non_zero_indices]
+      global_j_indices <- j_indices[non_zero_indices]
 
       #check for and handle zero values
       #the zeroes in the sparse matrix will yield NA, since they're still sparse, so . != 0 yields NA
@@ -119,19 +111,25 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
       valid_global_i_indices <- global_i_indices[valid_indices]
       valid_global_j_indices <- global_j_indices[valid_indices]
       valid_inside_values <- inside[non_zero_indices][valid_indices]
-      valid_i_adjusted <- i_adjusted[valid_indices]
-      valid_j_adjusted <- j_adjusted[valid_indices]
+      #the indices of the sub image aren't guaranteed to start at 0/1, but writing to the sparse matrix requires that the indices fit into:
+      # 1:x_max-x_min and 1:y_max-y_min, so we need to adjust the indices to fit into those ranges.
+      valid_i_adjusted <- valid_global_i_indices - x_min
+      valid_j_adjusted <- valid_global_j_indices - y_min
 
-      #create the sparse matrix
+
+      #convert the cell's dense sub-image into a sparse matrix with units of the original image for matrix addition.
       cell_sparse_matrix <- Matrix::sparseMatrix(
         i = valid_i_adjusted,
         j = valid_j_adjusted,
         x = valid_inside_values,
-        dims = c(sub_region_nrows, sub_region_ncols)
+        dims = c(length(seq(x_min, x_max, 1)),
+                 length(seq(y_min, y_max, 1))),
+        dimnames = list(seq(x_min, x_max, 1) ,
+                 seq(y_min, y_max, 1))
       )
-
-      sparseMatrix[valid_global_i_indices, valid_global_j_indices] <-
-        sparseMatrix[valid_global_i_indices, valid_global_j_indices] +
+      #matrix addition to write the cell's intensity information into the initialized image for the channel
+      sparseMatrix[valid_i_adjusted, valid_j_adjusted] <-
+        sparseMatrix[valid_i_adjusted, valid_j_adjusted] +
         cell_sparse_matrix[valid_i_adjusted, valid_j_adjusted]
     }
     if (channelNamesAreExpressionCSVColumnNames) {
@@ -148,6 +146,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
   sparse_matrix <- Matrix::Matrix(0,
                  nrow = length(seq(x_min, x_max, 1)),
                  ncol = length(seq(y_min, y_max, 1)),
+                 dimnames = list(seq(x_min, x_max, 1), seq(y_min, y_max, 1)),
                  sparse = TRUE)
   return(sparse_matrix)
 }
@@ -160,3 +159,13 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
   return(list(expression = expression, polygons = polygons))
 }
 
+WriteChannels <- function(channelNames = NULL,
+                          basePath = "./",
+                          channelNamesAreExpressionCSVColumnNames = TRUE) {
+  script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
+  script <- tempfile()
+  #write the script contents to a file to be executed
+  readr::write_file(str, script)
+  system2(reticulate::py_exe(), script)
+
+}
