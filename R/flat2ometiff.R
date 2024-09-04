@@ -7,8 +7,13 @@
 
 Flat2Matrix <- function(expressionCsvPath = NULL,
                         polygonCsvPath = NULL,
-                        basePath = "./",
+                        basePath = "./sparse_matrix_files/",
                         channelNamesAreExpressionCSVColumnNames = TRUE) {
+  #if the base path doesn't exist, create it
+  if (!dir.exists(basePath)) {
+    dir.create(basePath)
+  }
+
   #read in the flat files
   flat_file_list <- .ReadFlatFiles(expressionCsvPath = expressionCsvPath,
                                   polygonCsvPath = polygonCsvPath)
@@ -159,13 +164,22 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
   return(list(expression = expression, polygons = polygons))
 }
 
-WriteChannels <- function(channelNames = NULL,
-                          basePath = "./",
-                          channelNamesAreExpressionCSVColumnNames = TRUE) {
-  script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
-  script <- tempfile()
-  #write the script contents to a file to be executed
-  readr::write_file(str, script)
-  system2(reticulate::py_exe(), script)
+WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
+                              outputDirectory = "./tiff_channels/") {
+  for (matrixFile in list.files(basePath)) {
+    script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
+    script <- tempfile()
+
+    #write the function definition to the temp file
+    readr::write_file(script_contents, script)
+    function_call <- paste0("WriteChannelTiff(sparseMatrixFile = '", matrixFile,
+                     "',outputDirectory = '", outputDirectory,
+                     "')")
+
+    #write the function call with arguments to the end of the script and execute
+    readr::write_file(function_call, script, append = TRUE)
+    system2(reticulate::py_exe(), script)
+  }
+
 
 }

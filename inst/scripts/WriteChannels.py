@@ -3,7 +3,7 @@ from scipy.io import mmread
 from scipy.sparse import csr_matrix
 import tifffile
 
-def StreamImage(sparseMatrixFile):
+def WriteChannelTiff(sparseMatrixFile, outputDirectory):
   #read the sparse matrix, get the channel's name, and convert to csr matrix
   channel_name = sparseMatrixFile.split("_", 2)
   channel_name = channel_name[2].split(".", 1)[0]
@@ -14,7 +14,7 @@ def StreamImage(sparseMatrixFile):
   height, width = sparseMatrix.shape
 
   # Create a new tiff file for the channel
-  output_file = channel_name + ".tiff"
+  output_file = outputDirectory + channel_name + ".tiff"
 
   #open the tiff file for writing
   with tifffile.TiffWriter(output_file, bigtiff=True) as tiff:
