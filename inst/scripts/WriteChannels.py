@@ -1,9 +1,13 @@
 import numpy as np
 from scipy.io import mmread
 from scipy.sparse import csr_matrix
-import tifffile
+from pathlib import Path
+import tifffile, os
 
 def WriteChannelTiff(sparseMatrixFile, outputDirectory):
+  #check if the directory exists and create it if it doesn't
+  os.makedirs(outputDirectory, exist_ok=True)
+  
   #read the sparse matrix, get the channel's name, and convert to csr matrix
   channel_name = sparseMatrixFile.split("_", 2)
   channel_name = channel_name[2].split(".", 1)[0]
@@ -13,8 +17,8 @@ def WriteChannelTiff(sparseMatrixFile, outputDirectory):
   #get the dimensions of the matrix
   height, width = sparseMatrix.shape
 
-  # Create a new tiff file for the channel
-  output_file = outputDirectory + channel_name + ".tiff"
+  #create a new tiff file for the channel
+  output_file = outputDirectory + "/" + channel_name + ".tiff"
 
   #open the tiff file for writing
   with tifffile.TiffWriter(output_file, bigtiff=True) as tiff:
