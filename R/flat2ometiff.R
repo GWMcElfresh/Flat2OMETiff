@@ -166,7 +166,12 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
 
 WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
                               outputDirectory = "./tiff_channels/") {
-  for (matrixFile in list.files(basePath)) {
+  #enforce absolute paths
+  basePath <- R.utils::getAbsolutePath(basePath)
+  outputDirectory <- R.utils::getAbsolutePath(outputDirectory)
+  #TODO: remove the subsetting for space when the function is ready
+  for (matrixFile in list.files(basePath)[1:2]) {
+    start_time <- Sys.time()
     script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
     script <- tempfile()
 
@@ -179,6 +184,8 @@ WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
     #write the function call with arguments to the end of the script and execute
     readr::write_file(function_call, script, append = TRUE)
     system2(reticulate::py_exe(), script)
+    end_time <- Sys.time()
+    print(paste0("Time to write ", matrixFile, " to tiff: ", end_time - start_time))
   }
 
 
