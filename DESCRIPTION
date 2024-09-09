@@ -15,7 +15,6 @@ Depends:
 Imports:
     dplyr, 
     data.table,
-    parallel,
     Matrix,
     magrittr, 
     geometry, 
@@ -29,6 +28,6 @@ Suggests:
     rmarkdown,
     testthat
 Collate: 
-    'Flat2OMETiff-package.R',
-    'flat2ometiff.R', 
-    'utils-pipe.R', 
+    'Flat2OMETiff-package.R'
+    'flat2ometiff.R'
+    'utils-pipe.R'

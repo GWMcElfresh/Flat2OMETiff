@@ -1,6 +1,6 @@
 #define globals to suppress github actions warnings
 utils::globalVariables(
-  names = c('x_global_px', 'y_global_px', 'cellID', 'cell_ID'),
+  names = c('x_global_px', 'y_global_px', 'cellID', 'cell_ID', 'fov'),
   package = 'Flat2OMETiff',
   add = TRUE
 )
