@@ -1,40 +1,56 @@
 import numpy as np
 from scipy.io import mmread
 from scipy.sparse import csr_matrix
-from pathlib import Path
 import tifffile, os
 
 def WriteChannelTiff(sparseMatrixFile, outputDirectory):
-  #check if the directory exists and create it if it doesn't
-  os.makedirs(outputDirectory, exist_ok=True)
-  
-  #read the sparse matrix, get the channel's name, and convert to csr matrix
-  channel_name = sparseMatrixFile.split("_", 2)
-  channel_name = channel_name[2].split(".", 1)[0]
-  sparseMatrix = mmread(sparseMatrixFile)
-  sparseMatrix = csr_matrix(sparseMatrix)
+    #check if the directory exists and create it if it doesn't
+    os.makedirs(outputDirectory, exist_ok=True)
+    
+    #parse the file path (the channel name will be in the last split on _ characters)
+    channel_name = sparseMatrixFile.split("_")[-1].split(".")[0]
+    print(f"Channel name: {channel_name}")
+    
+    #read the sparse matrix from R and convert to csr_matrix (different kind of sparse matrix)
+    sparseMatrix = mmread(sparseMatrixFile)
+    sparseMatrix = csr_matrix(sparseMatrix)
+    
+    #convert the sparse matrix to a supported data type (e.g., uint8). uint16 will double the file size of the matrix.
+    sparseMatrix = sparseMatrix.astype(np.uint8)
+    
+    #get the dimensions of the matrix and print size
+    height, width = sparseMatrix.shape
+    print(f"Original matrix dimensions: {height} x {width}")
 
-  #get the dimensions of the matrix
-  height, width = sparseMatrix.shape
+    #create a memory-mapped file for the numpy array, since densifying the matrix requires like ~60GB of RAM
+    memmap_file = os.path.join(outputDirectory, f"{channel_name}.npy")
+    memmap_array = np.memmap(memmap_file, dtype=np.uint8, mode='w+', shape=(height, width))
 
-  #create a new tiff file for the channel
-  output_file = outputDirectory + "/" + channel_name + ".tiff"
+    #write the sparse matrix data to the memory-mapped file
+    memmap_array[:] = sparseMatrix.toarray()
+    memmap_array.flush()
 
-  #open the tiff file for writing
-  with tifffile.TiffWriter(output_file, bigtiff=True) as tiff:
-    #write the matrix data into the image row by row
-    for row in range(height):
-        #read the row from the sparse matrix
-        row_data = sparseMatrix[row].toarray().flatten()
-        
-        #clip the values to be within the range 0 to 255
-        row_data = np.clip(row_data, 0, 255)
-        
-        # cnvert the row's data to uint8
-        row_data = row_data.astype('uint8')
-        
-        #reshape the row data to match the image width
-        row_image = row_data.reshape(1, width)
-        
-        #write the row to the TIFF file
-        tiff.write(row_image, contiguous=True)
+    #create a new TIFF file for the channel
+    output_file = os.path.join(outputDirectory, f"{channel_name}.ome.tiff")
+
+    #write the entire image from the memory-mapped file, using compression
+    tifffile.imwrite(output_file, memmap_array, photometric='minisblack', bigtiff=True, compression ='zlib')
+
+    print(f"Finished writing TIFF to {output_file}")
+
+    #confirm the size of the written image and the number of stacks (should match the original matrix dimensions, and number of stacks should be 1)
+    with tifffile.TiffFile(output_file) as tif:
+        # Access the metadata
+        image_metadata = tif.pages[0].tags
+        image_width = image_metadata['ImageWidth'].value
+        image_length = image_metadata['ImageLength'].value
+        print(f"Written image dimensions: {image_length} x {image_width}")
+
+        # Count the number of stacks (pages)
+        num_stacks = len(tif.pages)
+        print(f"Number of stacks (pages) in the TIFF file: {num_stacks}")
+    #close the memmap file
+    memmap_array._mmap.close()
+    #remove the memory mapped file 
+    os.remove(memmap_file)
+

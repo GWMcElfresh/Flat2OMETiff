@@ -4,7 +4,8 @@
 #' Temporary function to set up R package
 #' @param echo boolean to control responses printed (or is it???)
 #' @export
-
+#TODO: docs
+#TODO: parallelize
 Flat2Matrix <- function(expressionCsvPath = NULL,
                         polygonCsvPath = NULL,
                         basePath = "./sparse_matrix_files/",
@@ -55,8 +56,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
     unique_cells <- paste0("fov_", flat_file_list$expression$fov, "_cellID_", flat_file_list$expression$cell_ID)
 
     #iterate over cells and fill the convex hulls (defined by the polygon flat files) with expression data
-    #TODO: remove the [1:3] when the function is ready for production
-    for (cell in unique_cells[1:3]){
+    for (cell in unique_cells){
       fov_ID <-  unlist(strsplit(cell, split ="_"))[2]
       cell_index <- unlist(strsplit(cell, split ="_"))[4]
 
@@ -146,7 +146,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
     Matrix::writeMM(sparseMatrix, file = paste0(basePath, "/sparse_matrix_", channel_name, ".mtx"))
   }
 }
-
+#TODO: docs
 .InitalizeSparseMatrix <- function(x_min, x_max, y_min, y_max) {
   sparse_matrix <- Matrix::Matrix(0,
                  nrow = length(seq(x_min, x_max, 1)),
@@ -155,22 +155,21 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
                  sparse = TRUE)
   return(sparse_matrix)
 }
-
-
+#TODO: docs
 .ReadFlatFiles <- function(expressionCsvPath = NULL,
                           polygonCsvPath = NULL) {
   expression <- data.table::fread(expressionCsvPath)
   polygons <- data.table::fread(polygonCsvPath)
   return(list(expression = expression, polygons = polygons))
 }
-
+#TODO: docs
 WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
                               outputDirectory = "./tiff_channels/") {
   #enforce absolute paths
   basePath <- R.utils::getAbsolutePath(basePath)
   outputDirectory <- R.utils::getAbsolutePath(outputDirectory)
-  #TODO: remove the subsetting for space when the function is ready
-  for (matrixFile in list.files(basePath)[1:2]) {
+  for (matrixFile in list.files(basePath, full.names = T)) {
+    print(matrixFile)
     start_time <- Sys.time()
     script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
     script <- tempfile()
@@ -180,7 +179,7 @@ WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
     function_call <- paste0("WriteChannelTiff(sparseMatrixFile = '", matrixFile,
                      "',outputDirectory = '", outputDirectory,
                      "')")
-
+    print(function_call)
     #write the function call with arguments to the end of the script and execute
     readr::write_file(function_call, script, append = TRUE)
     system2(reticulate::py_exe(), script)
@@ -188,5 +187,36 @@ WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
     print(paste0("Time to write ", matrixFile, " to tiff: ", end_time - start_time))
   }
 
+
+}
+
+StitchTiffChannels <- function(tiffChannelDirectory = "./tiff_channels/",
+                               outputDirectory = "./stitched_tiff/",
+                              channelWhitelist = NULL) {
+  #enforce absolute paths
+  tiffChannelDirectory <- R.utils::getAbsolutePath(tiffChannelDirectory)
+  outputDirectory <- R.utils::getAbsolutePath(outputDirectory)
+
+
+  start_time <- Sys.time()
+  script_contents <- readr::read_file(system.file("scripts/StitchTiffChannels.py", package = "Flat2OMETiff"))
+  script <- tempfile()
+
+  #write the function definition to the temp file
+  readr::write_file(script_contents, script)
+
+    #convert the R vector to a JSON array to be read by python
+  channelWhitelistJSON <- jsonlite::toJSON(channelWhitelist, auto_unbox = TRUE)
+  print(channelWhitelistJSON)
+  function_call <- paste0("StitchTiffChannels(channelsDirectory = '", tiffChannelDirectory,
+                            "',outputDirectory = '", outputDirectory,
+                            "',channelNames = '", channelWhitelistJSON,
+                            "')")
+
+    #write the function call with arguments to the end of the script and execute
+  readr::write_file(function_call, script, append = TRUE)
+  system2(reticulate::py_exe(), script)
+  end_time <- Sys.time()
+  print(paste0("Time to combine channels: ", end_time - start_time))
 
 }
