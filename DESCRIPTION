@@ -13,14 +13,21 @@ LazyData: true
 Depends:
     R (>= 4.3.0)
 Imports:
-    tidyverse, 
-    parallel,
-    Matrix, 
-    RBioFormats, 
-    duckdb
+    dplyr, 
+    data.table,
+    Matrix,
+    magrittr, 
+    geometry, 
+    reticulate, 
+    sp, 
+    R.utils, 
+    jsonlite, 
+    readr
 Suggests:
     devtools,
     rmarkdown,
     testthat
 Collate: 
+    'Flat2OMETiff-package.R'
     'flat2ometiff.R'
+    'utils-pipe.R'
