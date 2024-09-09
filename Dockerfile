@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 #rust install
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    . $HOME/.cargo/env && \
+    . /root/.cargo/env && \
     cargo build --release
 
 #julia install 
