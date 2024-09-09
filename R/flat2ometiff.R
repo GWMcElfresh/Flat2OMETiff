@@ -1,3 +1,10 @@
+#define globals to suppress github actions warnings
+utils::globalVariables(
+  names = c('x_global_px', 'y_global_px', 'cellID', 'cell_ID'),
+  package = 'Flat2OMETiff',
+  add = TRUE
+)
+
 #' @title Flat2Matrix
 #'
 #' @description This function converts flat files from CosMx into a directory of sparse matrices. One file for each channel will be created within the `outputDirectory` directory.
