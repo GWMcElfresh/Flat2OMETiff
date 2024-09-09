@@ -7,13 +7,19 @@
 Flat2Matrix(
   expressionCsvPath = NULL,
   polygonCsvPath = NULL,
-  basePath = "./sparse_matrix_files/",
+  outputDirectory = "./sparse_matrix_files/",
   channelNamesAreExpressionCSVColumnNames = TRUE
 )
 }
 \arguments{
-\item{echo}{boolean to control responses printed (or is it???)}
+\item{expressionCsvPath}{Path to the expression matrix CSV file.}
+
+\item{polygonCsvPath}{Path to the polygon CSV file.}
+
+\item{outputDirectory}{Path to the directory where the sparse matrices will be written.}
+
+\item{channelNamesAreExpressionCSVColumnNames}{Boolean to control whether the channel names are taken from the expression CSV file column names. If not, the channels are indexed numerically.}
 }
 \description{
-Temporary function to set up R package
+This function converts flat files from CosMx into a directory of sparse matrices. One file for each channel will be created within the \code{outputDirectory} directory.
 }

@@ -1,18 +1,22 @@
 #' @title Flat2Matrix
 #'
-#' @description
-#' Temporary function to set up R package
-#' @param echo boolean to control responses printed (or is it???)
+#' @description This function converts flat files from CosMx into a directory of sparse matrices. One file for each channel will be created within the `outputDirectory` directory.
+#'
+#' @param expressionCsvPath Path to the expression matrix CSV file.
+#' @param polygonCsvPath Path to the polygon CSV file.
+#' @param outputDirectory Path to the directory where the sparse matrices will be written.
+#' @param channelNamesAreExpressionCSVColumnNames Boolean to control whether the channel names are taken from the expression CSV file column names. If not, the channels are indexed numerically.
+#'
 #' @export
 #TODO: docs
 #TODO: parallelize
 Flat2Matrix <- function(expressionCsvPath = NULL,
                         polygonCsvPath = NULL,
-                        basePath = "./sparse_matrix_files/",
+                        outputDirectory = "./sparse_matrix_files/",
                         channelNamesAreExpressionCSVColumnNames = TRUE) {
   #if the base path doesn't exist, create it
-  if (!dir.exists(basePath)) {
-    dir.create(basePath)
+  if (!dir.exists(outputDirectory)) {
+    dir.create(outputDirectory)
   }
 
   #read in the flat files
@@ -143,10 +147,16 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
       channel_name <- which(channel_names == channel)
     }
     #write the channel's sparse matrix to disk
-    Matrix::writeMM(sparseMatrix, file = paste0(basePath, "/sparse_matrix_", channel_name, ".mtx"))
+    Matrix::writeMM(sparseMatrix, file = paste0(outputDirectory, "/sparse_matrix_", channel_name, ".mtx"))
   }
 }
-#TODO: docs
+#' @title InitalizeSparseMatrix
+#' @description This function initializes a sparse matrix with the dimensions of the global image.
+#' @param x_min The minimum x-coordinate of the global image.
+#' @param x_max The maximum x-coordinate of the global image.
+#' @param y_min The minimum y-coordinate of the global image.
+#' @param y_max The maximum y-coordinate of the global image.
+#' @return A sparse matrix with the dimensions of the CosMx image.
 .InitalizeSparseMatrix <- function(x_min, x_max, y_min, y_max) {
   sparse_matrix <- Matrix::Matrix(0,
                  nrow = length(seq(x_min, x_max, 1)),
@@ -155,20 +165,32 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
                  sparse = TRUE)
   return(sparse_matrix)
 }
-#TODO: docs
+
+#' @title ReadFlatFiles
+#' @description This function reads in the flat files from CosMx.
+#' @param expressionCsvPath Path to the expression matrix CSV file.
+#' @param polygonCsvPath Path to the polygon CSV file.
+#' @return A list containing the expression and polygon data tables.
+
 .ReadFlatFiles <- function(expressionCsvPath = NULL,
                           polygonCsvPath = NULL) {
   expression <- data.table::fread(expressionCsvPath)
   polygons <- data.table::fread(polygonCsvPath)
   return(list(expression = expression, polygons = polygons))
 }
-#TODO: docs
-WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
+
+#' @title WriteTiffChannels
+#' @description This function writes the sparse matrices to tiff files using the python tifffile library.
+#' @param sparseMatrixDirectory Path to the directory containing the sparse matrices.
+#' @param outputDirectory Path to the directory where the tiff files will be written.
+#' @export
+
+WriteTiffChannels <- function(sparseMatrixDirectory = "./sparse_matrix_files/",
                               outputDirectory = "./tiff_channels/") {
   #enforce absolute paths
-  basePath <- R.utils::getAbsolutePath(basePath)
+  sparseMatrixDirectory <- R.utils::getAbsolutePath(sparseMatrixDirectory)
   outputDirectory <- R.utils::getAbsolutePath(outputDirectory)
-  for (matrixFile in list.files(basePath, full.names = T)) {
+  for (matrixFile in list.files(sparseMatrixDirectory, full.names = T)) {
     print(matrixFile)
     start_time <- Sys.time()
     script_contents <- readr::read_file(system.file("scripts/WriteChannels.py", package = "Flat2OMETiff"))
@@ -190,9 +212,18 @@ WriteTiffChannels <- function(basePath = "./sparse_matrix_files/",
 
 }
 
+#' @title StitchTiffChannels
+#' @description This function stitches the tiff channels together using the python tifffile library.
+#' @param tiffChannelDirectory Path to the directory containing the tiff channels.
+#' @param outputDirectory Path to the directory where the stitched tiff files will be written.
+#' @param channelWhitelist A vector of channel names to include in the stitched tiff files.
+#' @export
+
+
 StitchTiffChannels <- function(tiffChannelDirectory = "./tiff_channels/",
                                outputDirectory = "./stitched_tiff/",
                               channelWhitelist = NULL) {
+  #TODO: add a check for the channelWhitelist to ensure that it's a vector and create a default behavior.
   #enforce absolute paths
   tiffChannelDirectory <- R.utils::getAbsolutePath(tiffChannelDirectory)
   outputDirectory <- R.utils::getAbsolutePath(outputDirectory)
