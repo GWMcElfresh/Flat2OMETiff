@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     git-all \
     wget \
+    curl \
     libbz2-dev \
     zlib1g-dev \
     python3-dev \
