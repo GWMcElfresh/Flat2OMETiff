@@ -17,8 +17,12 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     libffi-dev \
     r-base \
-    r-base-dev \
-    rustc 
+    r-base-dev 
+
+#rust install
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    source $HOME/.cargo/env && \
+    cargo build --release
 
 #julia install 
 RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linux-x86_64.tar.gz --directory-prefix=/ && \
