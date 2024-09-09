@@ -13,11 +13,17 @@ LazyData: true
 Depends:
     R (>= 4.3.0)
 Imports:
-    tidyverse, 
+    dplyr, 
+    data.table,
     parallel,
-    Matrix, 
-    RBioFormats, 
-    duckdb
+    Matrix,
+    magrittr, 
+    geometry, 
+    reticulate, 
+    sp, 
+    R.utils, 
+    jsonlite, 
+    readr
 Suggests:
     devtools,
     rmarkdown,

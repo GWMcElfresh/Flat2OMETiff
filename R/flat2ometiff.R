@@ -6,9 +6,11 @@
 #' @param polygonCsvPath Path to the polygon CSV file.
 #' @param outputDirectory Path to the directory where the sparse matrices will be written.
 #' @param channelNamesAreExpressionCSVColumnNames Boolean to control whether the channel names are taken from the expression CSV file column names. If not, the channels are indexed numerically.
+#' @importFrom data.table fread
+#' @importFrom dplyr filter select mutate
 #'
 #' @export
-#TODO: docs
+
 #TODO: parallelize
 Flat2Matrix <- function(expressionCsvPath = NULL,
                         polygonCsvPath = NULL,
@@ -150,6 +152,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
     Matrix::writeMM(sparseMatrix, file = paste0(outputDirectory, "/sparse_matrix_", channel_name, ".mtx"))
   }
 }
+
 #' @title InitalizeSparseMatrix
 #' @description This function initializes a sparse matrix with the dimensions of the global image.
 #' @param x_min The minimum x-coordinate of the global image.
@@ -157,6 +160,7 @@ Flat2Matrix <- function(expressionCsvPath = NULL,
 #' @param y_min The minimum y-coordinate of the global image.
 #' @param y_max The maximum y-coordinate of the global image.
 #' @return A sparse matrix with the dimensions of the CosMx image.
+
 .InitalizeSparseMatrix <- function(x_min, x_max, y_min, y_max) {
   sparse_matrix <- Matrix::Matrix(0,
                  nrow = length(seq(x_min, x_max, 1)),
@@ -218,7 +222,6 @@ WriteTiffChannels <- function(sparseMatrixDirectory = "./sparse_matrix_files/",
 #' @param outputDirectory Path to the directory where the stitched tiff files will be written.
 #' @param channelWhitelist A vector of channel names to include in the stitched tiff files.
 #' @export
-
 
 StitchTiffChannels <- function(tiffChannelDirectory = "./tiff_channels/",
                                outputDirectory = "./stitched_tiff/",
