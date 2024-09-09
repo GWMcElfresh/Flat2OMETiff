@@ -3,7 +3,13 @@
 <url><loc>/LICENSE.html</loc></url>
 <url><loc>/authors.html</loc></url>
 <url><loc>/index.html</loc></url>
-<url><loc>/reference/Init.html</loc></url>
+<url><loc>/reference/Flat2Matrix.html</loc></url>
+<url><loc>/reference/Flat2OMETiff-package.html</loc></url>
+<url><loc>/reference/StitchTiffChannels.html</loc></url>
+<url><loc>/reference/WriteTiffChannels.html</loc></url>
+<url><loc>/reference/dot-InitalizeSparseMatrix.html</loc></url>
+<url><loc>/reference/dot-ReadFlatFiles.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/pipe.html</loc></url>
 </urlset>
 
