@@ -31,7 +31,7 @@ RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.5-linu
     julia -e 'import Pkg; Pkg.add(["Glob", "CSV", "DataFrames", "CodecZlib", "ArgParse"])'
 
 #cargo install proseg
-RUN cargo install proseg
+RUN /root/.cargo/bin/cargo install proseg
 
 ENV NUMBA_CACHE_DIR=/work/numba_cache
 ENV MPLCONFIGDIR=/work/mpl_cache
